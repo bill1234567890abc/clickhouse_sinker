@@ -48,7 +48,7 @@ func (k *Kafka) Start() error {
 		config.Net.SASL.User = k.Sasl.Username
 		config.Net.SASL.Password = k.Sasl.Password
 	}
-	consumer, err := cluster.NewConsumer(strings.Split(k.Brokers, ","), k.ConsumerGroup, []string{k.Topic}, config)
+	consumer, err := cluster.NewConsumer(strings.Split(k.Brokers, ","), k.ConsumerGroup, strings.Split(k.Topic, ","), config)
 	if err != nil {
 		return err
 	}
@@ -59,6 +59,7 @@ func (k *Kafka) Start() error {
 		for {
 			select {
 			case msg, more := <-k.consumer.Messages():
+				log.Debug("incoming message : ", string(msg.Value[:]))
 				if !more {
 					break FOR
 				}
@@ -66,6 +67,7 @@ func (k *Kafka) Start() error {
 				k.consumer.MarkOffset(msg, "") // mark message as processed
 
 			case err, more := <-k.consumer.Errors():
+				log.Debug("got an error")
 				if more {
 					log.Errorf("Error: %s\n", err.Error())
 				}
